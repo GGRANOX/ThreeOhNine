@@ -1,12 +1,12 @@
 # Team Contribution Statement
 
-**Жоба:** ThreeOhNine — AI Algorithm Visualizer
+**Project:** ThreeOhNine — AI Algorithm Visualizer
 
-| Қатысушы | Үлесі |
+| Member | Contribution |
 |---|---|
-| Krasnobrizh Artyom | Бағдарламалау: алгоритмдердің коды (BFS, DFS, UCS, A*, Hill Climbing, Minimax, Alpha-Beta), интерфейс, тестілер, GitHub-қа жариялау |
-| Orazgali Daulet | Ақпарат іздеу және материал дайындау (алгоритмдер теориясы, дереккөздер), презентация жасау |
+| Krasnobrizh Artyom | Programming: algorithm code (BFS, DFS, UCS, A*, Hill Climbing, Minimax, Alpha-Beta), interface, tests, publishing to GitHub |
+| Orazgali Daulet | Research and preparing materials (algorithm theory, sources), creating the presentation |
 
-Екі қатысушы да алгоритмдердің жұмысын түсіндіре алады және жобаны қорғауға қатысады.
+Both members can explain how the algorithms work and take part in the project defense.
 
-Құпия API кілттері репозиторийге жарияланбаған.
+No secret API keys have been published in the repository.

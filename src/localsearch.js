@@ -1,5 +1,5 @@
-// Апта 3 — Local Search: Hill Climbing (N-Queens).
-// state[col] = row. conflicts(state) = шабуылдаушы ферзь жұптарының саны (минимизацияланатын h).
+// Week 3 — Local Search: Hill Climbing (N-Queens).
+// state[col] = row. conflicts(state) = number of attacking queen pairs (the h to minimize).
 export function conflicts(state) {
   let c = 0;
   for (let i = 0; i < state.length; i++)
@@ -9,10 +9,10 @@ export function conflicts(state) {
 }
 
 export function validateN(n) {
-  if (!Number.isInteger(n) || n < 4 || n > 30) throw new Error('N 4..30 аралығындағы бүтін сан болуы тиіс');
+  if (!Number.isInteger(n) || n < 4 || n > 30) throw new Error('N must be an integer between 4 and 30');
 }
 
-function rng(seed) { // mulberry32 — қайталанатын нәтиже үшін
+function rng(seed) { // mulberry32 — for reproducible results
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6D2B79F5) >>> 0;
@@ -23,10 +23,10 @@ function rng(seed) { // mulberry32 — қайталанатын нәтиже ү�
   };
 }
 
-/** Steepest-ascent hill climbing + random restarts. steps — әр қадамдағы күй. */
+/** Steepest-ascent hill climbing + random restarts. steps — the state at every step. */
 export function hillClimbing(n, { maxRestarts = 20, seed = 1 } = {}) {
   validateN(n);
-  if (!Number.isInteger(maxRestarts) || maxRestarts < 0) throw new Error('Restarts теріс емес бүтін сан болуы тиіс');
+  if (!Number.isInteger(maxRestarts) || maxRestarts < 0) throw new Error('Restarts must be a non-negative integer');
   const rand = rng(seed);
   const steps = [];
   let state = [];
@@ -46,7 +46,7 @@ export function hillClimbing(n, { maxRestarts = 20, seed = 1 } = {}) {
         }
         state[col] = old;
       }
-      if (!bestMove) break; // жергілікті минимум
+      if (!bestMove) break; // local minimum
       state[bestMove[0]] = bestMove[1];
       cur = best;
       steps.push({ state: [...state], h: cur, restart: restarts });

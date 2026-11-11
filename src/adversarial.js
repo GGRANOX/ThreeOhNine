@@ -1,5 +1,5 @@
-// Апта 4 — Adversarial Search: Minimax және Alpha-Beta (Tic-Tac-Toe).
-// board: 9 элемент, 'X' | 'O' | null. AI = 'O' (maximize), адам = 'X' (minimize).
+// Week 4 — Adversarial Search: Minimax and Alpha-Beta (Tic-Tac-Toe).
+// board: 9 cells, 'X' | 'O' | null. AI = 'O' (maximize), human = 'X' (minimize).
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 
 export function winner(b) {
@@ -10,13 +10,13 @@ export const isFull = (b) => b.every(Boolean);
 export const moves = (b) => b.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
 
 export function validateBoard(b) {
-  if (!Array.isArray(b) || b.length !== 9) throw new Error('Тақта 9 ұяшықтан тұруы тиіс');
-  if (b.some((v) => v !== null && v !== 'X' && v !== 'O')) throw new Error('Жарамсыз таңба');
+  if (!Array.isArray(b) || b.length !== 9) throw new Error('Board must have 9 cells');
+  if (b.some((v) => v !== null && v !== 'X' && v !== 'O')) throw new Error('Invalid symbol');
   const x = b.filter((v) => v === 'X').length, o = b.filter((v) => v === 'O').length;
-  if (Math.abs(x - o) > 1) throw new Error('Жарамсыз тақта күйі');
+  if (Math.abs(x - o) > 1) throw new Error('Invalid board state');
 }
 
-// Терминал мәні AI ('O') тұрғысынан: 10 - depth жеңіс, depth - 10 жеңіліс.
+// Terminal value from the AI's ('O') point of view: 10 - depth for a win, depth - 10 for a loss.
 function evalTerminal(b, depth) {
   const w = winner(b);
   if (w === 'O') return 10 - depth;
@@ -51,7 +51,7 @@ export function alphaBeta(b, player, depth = 0, alpha = -Infinity, beta = Infini
     b[m] = null;
     if (max ? value > best : value < best) { best = value; bestMove = m; }
     if (max) alpha = Math.max(alpha, best); else beta = Math.min(beta, best);
-    if (beta <= alpha) break; // кесу (pruning)
+    if (beta <= alpha) break; // pruning
   }
   return { value: best, move: bestMove, stats };
 }
@@ -59,6 +59,6 @@ export function alphaBeta(b, player, depth = 0, alpha = -Infinity, beta = Infini
 export function aiMove(board, algo = 'alphabeta') {
   validateBoard(board);
   const b = [...board];
-  if (winner(b) || isFull(b)) throw new Error('Ойын аяқталған');
+  if (winner(b) || isFull(b)) throw new Error('Game is over');
   return algo === 'minimax' ? minimax(b, 'O') : alphaBeta(b, 'O');
 }

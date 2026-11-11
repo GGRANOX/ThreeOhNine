@@ -1,60 +1,60 @@
 # ThreeOhNine — AI Algorithm Visualizer
 
-QAIRU AI Application Development Challenge 2026 (Final Project). Интерактивті веб-қосымша: AI алгоритмдерін қадамдап визуализациялайды, параметрлерін өзгертуге және нәтижелерді салыстыруға мүмкіндік береді. Барлық алгоритмдер **қолмен жазылған**, дайын AI API қолданылмайды.
+QAIRU AI Application Development Challenge 2026 (Final Project). An interactive web app that visualizes AI algorithms step by step and lets you change their parameters and compare the results. All algorithms are **written by hand**; no ready-made AI APIs are used.
 
-## Іске асырылған 3 AI тақырыбы (силлабус аптасы)
-| Апта | Тақырып | Алгоритмдер | Файл |
+## 3 AI topics implemented (syllabus weeks)
+| Week | Topic | Algorithms | File |
 |---|---|---|---|
 | 2 | Uninformed Search, A*, Heuristics | BFS, DFS, UCS, A* (Manhattan/Euclidean/h=0) | `src/search.js` |
 | 3 | Local Search | Hill Climbing + random restarts (N-Queens) | `src/localsearch.js` |
 | 4 | Adversarial Search | Minimax, Alpha-Beta (Tic-Tac-Toe) | `src/adversarial.js` |
 
-## Мүмкіндіктер
-- **Іздеу:** тор өлшемін таңдау, қабырға/салмақ (5, 9) салу, бастау/аяқтау орнын жылжыту, алгоритм мен эвристиканы таңдау, анимация жылдамдығы, төрт алгоритмді бір кестеде салыстыру (құн, ашылған түйін, уақыт).
-- **Hill Climbing:** N (4–30), restarts, seed; қадамдық ойнату және слайдер, конфликттер саны h.
-- **Minimax:** адаммен ойнау, AI алгоритмін таңдау, әр жүріс үшін Minimax және Alpha-Beta түйін санын салыстыру.
-- Қате енгізуді өңдеу: қабырғадағы бастау, жол жоқ, жарамсыз N, тордан тыс нүкте.
+## Features
+- **Search:** choose the grid size, draw walls and weights (5, 9), move the start and goal, pick the algorithm and heuristic, set the animation speed, compare all four algorithms in one table (cost, nodes expanded, time).
+- **Hill Climbing:** N (4–30), restarts, seed; step-by-step playback with a slider and the number of conflicts h.
+- **Minimax:** play against the AI, choose the AI algorithm, compare Minimax and Alpha-Beta node counts for every move.
+- Invalid input handling: start on a wall, no path, invalid N, point outside the grid.
 
-## Іске қосу
-Тәуелділіктер жоқ (таза JavaScript, ES modules).
+## Running
+No dependencies (plain JavaScript, ES modules).
 ```bash
 git clone https://github.com/GGRANOX/ThreeOhNine.git
 cd ThreeOhNine
-npx serve .        # немесе: python -m http.server 8000
+npx serve .        # or: python -m http.server 8000
 ```
-Браузерде `http://localhost:3000` (немесе `:8000`) ашыңыз. `index.html`-ді файл ретінде ашу модульдер үшін жұмыс істемейді — сервер қажет.
+Open `http://localhost:3000` (or `:8000`) in a browser. Opening `index.html` as a file does not work for ES modules — a server is required.
 
-Live demo: https://threeohnine.vercel.app (дайын күйлер: `/?demo#search`, `#queens`, `#ttt`)
+Live demo: https://threeohnine.vercel.app (preset states: `/?demo#search`, `#queens`, `#ttt`)
 
-## Тестілеу
+## Testing
 Node.js ≥ 20:
 ```bash
 npm test
 ```
-Тесттер (`tests/algorithms.test.js`): BFS/UCS/A* оңтайлылығы, салмақты торда айналма жол, A* ≤ UCS түйін саны, жол жоқ жағдайы, қате енгізулер, Hill Climbing шешімінің дұрыстығы, Alpha-Beta мәні = Minimax және түйін аз, AI ешқашан жеңілмейді, жеңіс жүрісін таңдайды.
+Tests (`tests/algorithms.test.js`): optimality of BFS/UCS/A*, detour on a weighted grid, A* ≤ UCS in expanded nodes, no-path case, invalid input, correctness of the Hill Climbing solution, Alpha-Beta value = Minimax with fewer nodes, the AI never loses, the AI picks the winning move.
 
-Метрикалар: жол құны/ұзындығы, ашылған түйін саны, орындалу уақыты, конфликттер саны, қаралған ойын түйіндері.
+Metrics: path cost/length, nodes expanded, run time, number of conflicts, game nodes searched.
 
-## Архитектура
+## Architecture
 ```
 index.html, css/style.css, css/fonts.css, fonts/, img/logo.svg
-src/search.js        # таза функциялар, UI-дан тәуелсіз
+src/search.js        # pure functions, independent of the UI
 src/localsearch.js
 src/adversarial.js
-src/main.js          # UI: канвас, табтар, плеер
+src/main.js          # UI: canvas, tabs, player
 tests/               # node:test
-docs/                # Technical Report, AI Usage Declaration, Team Contribution, слайд жоспары
+docs/                # Technical Report, AI Usage Declaration, Team Contribution, slide outline
 ```
-Алгоритм логикасы мен UI бөлек, сондықтан логика браузерсіз тестіленеді.
+The algorithm logic is separated from the UI, so it is tested without a browser.
 
-## Шектеулер
-- Іздеу 4 бағытты (диагональсыз) тор. BFS/DFS салмақты ескермейді.
-- Hill Climbing жергілікті минимумда тұрып қалуы мүмкін — restarts қолданылады.
-- Tic-Tac-Toe кішкентай ойын ағашы, толық Minimax қолданылады (тереңдік шектеуі жоқ).
-- Құпия API кілттері жоқ және қажет емес.
+## Limitations
+- Search runs on a 4-connected grid (no diagonals). BFS/DFS ignore weights.
+- Hill Climbing can get stuck in a local minimum — restarts are used.
+- Tic-Tac-Toe has a small game tree, so full Minimax is used (no depth limit).
+- No secret API keys are used or needed.
 
-## Құжаттама
-`docs/technical-report.md` (нақты өлшеулермен, `npm run bench`), `docs/ai-usage-declaration.md`, `docs/team-contribution.md`, `docs/presentation-outline.md`, презентация: `docs/ThreeOhNine-presentation.pptx`.
+## Documentation
+`docs/technical-report.md` (with real measurements, `npm run bench`), `docs/ai-usage-declaration.md`, `docs/team-contribution.md`, `docs/presentation-outline.md`, presentation: `docs/ThreeOhNine-presentation.pptx`.
 
-## Әзірлеушілер
+## Developers
 Krasnobrizh Artyom, Orazgali Daulet

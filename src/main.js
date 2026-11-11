@@ -17,7 +17,7 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   showTab(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab);
 }));
 
-// ======================= Апта 2: Search =======================
+// ======================= Week 2: Search =======================
 const S = { cells: makeGrid(15, 25), start: [7, 3], goal: [7, 21], vis: new Map(), path: [], timer: 0, painting: false };
 const sc = $('s-canvas'), sctx = sc.getContext('2d');
 const CELL = 26;
@@ -44,7 +44,7 @@ function sDraw() {
   const pad = 1.5;
   for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
     const w = S.cells[r][c], x = c * CELL + pad, y = r * CELL + pad, s = CELL - pad * 2;
-    if (w === 0) { // қабырға — изумруд шыны блок
+    if (w === 0) { // wall: emerald glass block
       const g = sctx.createLinearGradient(x, y, x + s, y + s);
       g.addColorStop(0, '#b6f5da'); g.addColorStop(0.55, '#5cc9a0'); g.addColorStop(1, '#2a8a68');
       sctx.fillStyle = g;
@@ -98,13 +98,13 @@ $('s-run').onclick = () => {
   try { res = solve(...sOpts()); } catch (e) { say($('s-msg'), e.message, 'err'); sDraw(); return; }
   const C = S.cells[0].length, per = Math.max(1, Math.round(($('s-speed').value / 100) ** 2 * 20));
   let i = 0;
-  say($('s-msg'), 'Іздеу жүріп жатыр…');
+  say($('s-msg'), 'Searching…');
   const tick = () => {
     for (let k = 0; k < per && i < res.visited.length; k++, i++) S.vis.set(res.visited[i][0] * C + res.visited[i][1], 1);
     sDraw();
     if (i < res.visited.length) { S.timer = setTimeout(tick, 16); return; }
-    if (res.found) { S.path = res.path; sDraw(); say($('s-msg'), `Жол табылды: ұзындығы ${res.path.length - 1} қадам, құны ${res.cost}.`, 'ok'); }
-    else say($('s-msg'), 'Жол жоқ: бастау мен аяқтау арасы қабырғамен жабылған.', 'err');
+    if (res.found) { S.path = res.path; sDraw(); say($('s-msg'), `Path found: ${res.path.length - 1} steps, cost ${res.cost}.`, 'ok'); }
+    else say($('s-msg'), 'No path: walls separate the start from the goal.', 'err');
     showResult([[sOpts()[0], res]]);
   };
   tick();
@@ -117,15 +117,15 @@ $('s-compare').onclick = () => {
     const best = rows.find((r) => r[0] === 'astar')[1];
     if (best.found) S.path = best.path;
     S.vis.clear(); sDraw(); showResult(rows);
-    say($('s-msg'), best.found ? 'Салыстыру дайын (жолақ — A* жолы).' : 'Жол жоқ.', best.found ? 'ok' : 'err');
+    say($('s-msg'), best.found ? 'Comparison ready (the highlighted line is the A* path).' : 'No path.', best.found ? 'ok' : 'err');
   } catch (e) { say($('s-msg'), e.message, 'err'); }
 };
 
 function showResult(rows) {
-  $('s-result').innerHTML = '<table><tr><th>Алгоритм</th><th>Табылды</th><th>Құны</th><th>Ашылған түйін</th><th>Уақыт, мс</th></tr>' +
-    rows.map(([a, r]) => `<tr><td>${NAMES[a]}</td><td>${r.found ? 'иә' : 'жоқ'}</td><td>${r.cost ?? '—'}</td><td>${r.expanded}</td><td>${r.ms.toFixed(2)}</td></tr>`).join('') + '</table>';
-  $('s-explain').innerHTML = '<b>Түсіндірме:</b> BFS қадам санын азайтады, бірақ салмақты ескермейді; DFS жолды табады, бірақ оңтайлы емес; ' +
-    'UCS жиналған құнды (g) бойынша оңтайлы; A* f = g + h бойынша бағытталған, үйлесімді (admissible) эвристикада оңтайлы әрі UCS-тан аз түйін ашады.';
+  $('s-result').innerHTML = '<table><tr><th>Algorithm</th><th>Found</th><th>Cost</th><th>Nodes expanded</th><th>Time, ms</th></tr>' +
+    rows.map(([a, r]) => `<tr><td>${NAMES[a]}</td><td>${r.found ? 'yes' : 'no'}</td><td>${r.cost ?? '—'}</td><td>${r.expanded}</td><td>${r.ms.toFixed(2)}</td></tr>`).join('') + '</table>';
+  $('s-explain').innerHTML = '<b>Explanation:</b> BFS minimizes the number of steps but ignores weights; DFS finds a path, but not an optimal one; ' +
+    'UCS is optimal with respect to the accumulated cost (g); A* is guided by f = g + h, is optimal with an admissible heuristic and expands fewer nodes than UCS.';
 }
 
 $('s-resize').onclick = () => {
@@ -141,7 +141,7 @@ $('s-random').onclick = () => {
 };
 sDraw();
 
-// ======================= Апта 3: Hill Climbing =======================
+// ======================= Week 3: Hill Climbing =======================
 const Q = { res: null, i: 0, timer: 0 };
 const qc = $('q-canvas'), qctx = qc.getContext('2d');
 
@@ -161,9 +161,9 @@ function qDraw() {
     qctx.fillStyle = attacked ? '#ff7088' : '#34f5a5'; qctx.shadowColor = attacked ? 'rgba(255,112,136,.8)' : 'rgba(52,245,165,.85)'; qctx.shadowBlur = 10;
     qctx.fill(crown); qctx.restore();
   });
-  $('q-info').innerHTML = `<b>Қадам ${Q.i}/${Q.res.steps.length - 1}</b> · restart #${step.restart} · конфликттер h = <b>${step.h}</b>` +
-    (Q.i === Q.res.steps.length - 1 ? (Q.res.solved ? ' · <b>шешім табылды</b>' : ' · шешім табылмады (жергілікті минимум)') : '') +
-    '<br>Hill Climbing әр қадамда h-ты ең көп азайтатын ферзь жылжытады; жергілікті минимумда тоқтап, кездейсоқ қайта бастайды (random restart).';
+  $('q-info').innerHTML = `<b>Step ${Q.i}/${Q.res.steps.length - 1}</b> · restart #${step.restart} · conflicts h = <b>${step.h}</b>` +
+    (Q.i === Q.res.steps.length - 1 ? (Q.res.solved ? ' · <b>solution found</b>' : ' · no solution (local minimum)') : '') +
+    '<br>At every step Hill Climbing moves the queen that reduces h the most; at a local minimum it stops and starts again from a random state (random restart).';
 }
 $('q-run').onclick = () => {
   clearInterval(Q.timer);
@@ -171,12 +171,12 @@ $('q-run').onclick = () => {
     Q.res = hillClimbing(+$('q-n').value, { maxRestarts: +$('q-restarts').value, seed: +$('q-seed').value });
   } catch (e) { say($('q-msg'), e.message, 'err'); return; }
   Q.i = 0; $('q-slider').max = Q.res.steps.length - 1; $('q-slider').value = 0; syncSlider($('q-slider'));
-  say($('q-msg'), Q.res.solved ? `Шешім табылды: ${Q.res.restarts} restart, ${Q.res.steps.length - 1} қадам.` : `Шешім табылмады, соңғы h=${Q.res.h}. Restarts санын көбейтіңіз.`, Q.res.solved ? 'ok' : 'err');
+  say($('q-msg'), Q.res.solved ? `Solution found: ${Q.res.restarts} restarts, ${Q.res.steps.length - 1} steps.` : `No solution, final h=${Q.res.h}. Increase the number of restarts.`, Q.res.solved ? 'ok' : 'err');
   qDraw();
 };
 $('q-slider').addEventListener('input', (e) => { Q.i = +e.target.value; qDraw(); });
 $('q-play').onclick = () => {
-  if (!Q.res) { say($('q-msg'), 'Алдымен «Іске қосу» басыңыз.', 'err'); return; }
+  if (!Q.res) { say($('q-msg'), 'Press “Run” first.', 'err'); return; }
   clearInterval(Q.timer);
   if (Q.i >= Q.res.steps.length - 1) Q.i = 0;
   Q.timer = setInterval(() => {
@@ -186,14 +186,14 @@ $('q-play').onclick = () => {
 };
 qDraw();
 
-// ======================= Апта 4: Minimax =======================
+// ======================= Week 4: Minimax =======================
 const T = { b: Array(9).fill(null), over: false };
 function tRender() {
   const box = $('t-board'); box.innerHTML = '';
   T.b.forEach((v, i) => {
     const btn = document.createElement('button');
     btn.innerHTML = v === 'X' ? '<svg class="x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg>' : v === 'O' ? '<svg class="o" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg>' : ''; btn.disabled = !!v || T.over;
-    btn.setAttribute('aria-label', `Ұяшық ${i + 1}`);
+    btn.setAttribute('aria-label', `Cell ${i + 1}`);
     btn.onclick = () => tHuman(i); box.appendChild(btn);
   });
 }
@@ -201,7 +201,7 @@ function tCheck() {
   const w = winner(T.b);
   if (w || isFull(T.b)) {
     T.over = true;
-    say($('t-msg'), w === 'X' ? 'Сіз жеңдіңіз!' : w === 'O' ? 'AI жеңді.' : 'Тең ойын.', w === 'X' ? 'ok' : '');
+    say($('t-msg'), w === 'X' ? 'You win!' : w === 'O' ? 'AI wins.' : 'Draw.', w === 'X' ? 'ok' : '');
     return true;
   }
   return false;
@@ -211,9 +211,9 @@ function tAI() {
   const res = aiMove(T.b, algo);
   const mm = minimax([...T.b], 'O').stats.nodes, ab = alphaBeta([...T.b], 'O').stats.nodes;
   T.b[res.move] = 'O';
-  $('t-info').innerHTML = `<b>AI жүрісі:</b> ұяшық ${res.move + 1}, бағасы ${res.value}. Қаралған түйіндер — Minimax: <b>${mm}</b>, Alpha-Beta: <b>${ab}</b> ` +
-    `(үнемдеу ${(100 * (1 - ab / mm)).toFixed(0)}%). Таңдалған: ${algo === 'minimax' ? 'Minimax' : 'Alpha-Beta'}.<br>` +
-    'Minimax бүкіл ойын ағашын қарап, AI үшін мәнді максимумдайды, адам үшін минимумдайды; Alpha-Beta нәтижеге әсер етпейтін тармақтарды кеседі.';
+  $('t-info').innerHTML = `<b>AI move:</b> cell ${res.move + 1}, value ${res.value}. Nodes searched — Minimax: <b>${mm}</b>, Alpha-Beta: <b>${ab}</b> ` +
+    `(${(100 * (1 - ab / mm)).toFixed(0)}% saved). Selected: ${algo === 'minimax' ? 'Minimax' : 'Alpha-Beta'}.<br>` +
+    'Minimax searches the whole game tree, maximizing the value for the AI and minimizing it for the human; Alpha-Beta prunes branches that cannot change the result.';
 }
 function tHuman(i) {
   if (T.over || T.b[i]) return;
@@ -222,16 +222,16 @@ function tHuman(i) {
   tRender();
 }
 $('t-new').onclick = () => {
-  T.b = Array(9).fill(null); T.over = false; say($('t-msg'), 'Сіздің жүрісіңіз (X).'); $('t-info').textContent = '';
-  if ($("t-first").value === "ai") { tAI(); say($('t-msg'), 'Сіздің жүрісіңіз (X).'); }
+  T.b = Array(9).fill(null); T.over = false; say($('t-msg'), 'Your move (X).'); $('t-info').textContent = '';
+  if ($("t-first").value === "ai") { tAI(); say($('t-msg'), 'Your move (X).'); }
   tRender();
 };
 $('t-new').click();
 
-$('q-run').click(); // бастапқы демо: 8 ферзь
+$('q-run').click(); // initial demo: 8 queens
 showTab(location.hash.slice(1));
 
-// ?demo — скриншот/қорғау үшін дайын күй (лабиринт + салыстыру, TTT бірінші жүріс)
+// ?demo — preset state for screenshots / the defense (maze + comparison, first TTT move)
 if (new URLSearchParams(location.search).has('demo')) {
   for (let r = 0; r <= 10; r++) S.cells[r][8] = 0;
   for (let r = 4; r <= 14; r++) S.cells[r][16] = 0;

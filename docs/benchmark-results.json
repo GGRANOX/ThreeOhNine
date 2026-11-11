@@ -1,6 +1,6 @@
 {
   "search": {
-    "Ашық тор 30x30": {
+    "Open grid 30x30": {
       "bfs": {
         "found": true,
         "cost": 58,
@@ -26,7 +26,7 @@
         "ms": 0.141
       }
     },
-    "Лабиринт 15x25 (екі қабырға)": {
+    "Maze 15x25 (two walls)": {
       "bfs": {
         "found": true,
         "cost": 34,
@@ -52,7 +52,7 @@
         "ms": 0.123
       }
     },
-    "Кездейсоқ 25% қабырға 30x30 (seed 2)": {
+    "Random 25% walls 30x30 (seed 2)": {
       "bfs": {
         "found": true,
         "cost": 58,
@@ -78,7 +78,7 @@
         "ms": 0.176
       }
     },
-    "Салмақты 20x20 (құны 1..9, seed 5)": {
+    "Weighted 20x20 (cost 1..9, seed 5)": {
       "bfs": {
         "found": true,
         "cost": 196,
@@ -133,7 +133,7 @@
   ],
   "ttt": [
     {
-      "name": "Бос тақта",
+      "name": "Empty board",
       "minimaxNodes": 549946,
       "alphaBetaNodes": 20866,
       "savedPct": 96.2,
@@ -142,7 +142,7 @@
       "sameValue": true
     },
     {
-      "name": "X ортада",
+      "name": "X in the center",
       "minimaxNodes": 55505,
       "alphaBetaNodes": 2459,
       "savedPct": 95.6,
@@ -151,7 +151,7 @@
       "sameValue": true
     },
     {
-      "name": "X бұрышта",
+      "name": "X in a corner",
       "minimaxNodes": 59705,
       "alphaBetaNodes": 2788,
       "savedPct": 95.3,

@@ -1,5 +1,5 @@
-// Апта 2 — Uninformed Search, A*, Heuristics.
-// cells[r][c] = 0 -> қабырға (wall), >=1 -> ұяшық құны (weight).
+// Week 2 — Uninformed Search, A*, Heuristics.
+// cells[r][c] = 0 -> wall, >=1 -> cell cost (weight).
 export const DIRS = [[-1, 0], [0, 1], [1, 0], [0, -1]];
 
 export const HEURISTICS = {
@@ -9,11 +9,11 @@ export const HEURISTICS = {
 };
 
 export function validateProblem(cells, start, goal) {
-  if (!Array.isArray(cells) || !cells.length) throw new Error('Тор бос');
+  if (!Array.isArray(cells) || !cells.length) throw new Error('Grid is empty');
   const R = cells.length, C = cells[0].length;
-  for (const [n, p] of [['Бастау', start], ['Аяқтау', goal]]) {
-    if (!p || p[0] < 0 || p[1] < 0 || p[0] >= R || p[1] >= C) throw new Error(`${n} нүктесі тордан тыс`);
-    if (cells[p[0]][p[1]] === 0) throw new Error(`${n} нүктесі қабырғада тұр`);
+  for (const [n, p] of [['Start', start], ['Goal', goal]]) {
+    if (!p || p[0] < 0 || p[1] < 0 || p[0] >= R || p[1] >= C) throw new Error(`${n} point is outside the grid`);
+    if (cells[p[0]][p[1]] === 0) throw new Error(`${n} point is on a wall`);
   }
 }
 
@@ -42,14 +42,14 @@ class MinHeap {
 
 /**
  * algo: 'bfs' | 'dfs' | 'ucs' | 'astar'
- * Қайтарады: {found, path, visited, cost, expanded, ms}
- * visited — түйіндердің ашылу реті (визуализация үшін).
+ * Returns: {found, path, visited, cost, expanded, ms}
+ * visited — the order in which nodes were expanded (for visualization).
  */
 export function solve(algo, cells, start, goal, heuristic = 'manhattan') {
-  if (!['bfs', 'dfs', 'ucs', 'astar'].includes(algo)) throw new Error('Белгісіз алгоритм: ' + algo);
+  if (!['bfs', 'dfs', 'ucs', 'astar'].includes(algo)) throw new Error('Unknown algorithm: ' + algo);
   validateProblem(cells, start, goal);
   const h = HEURISTICS[heuristic];
-  if (algo === 'astar' && !h) throw new Error('Белгісіз эвристика: ' + heuristic);
+  if (algo === 'astar' && !h) throw new Error('Unknown heuristic: ' + heuristic);
   const R = cells.length, C = cells[0].length;
   const id = (p) => p[0] * C + p[1];
   const priority = algo === 'ucs' || algo === 'astar';
@@ -98,6 +98,6 @@ export function solve(algo, cells, start, goal, heuristic = 'manhattan') {
 
 export function makeGrid(rows, cols, fill = 1) {
   if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 2 || cols < 2 || rows > 60 || cols > 60)
-    throw new Error('Тор өлшемі 2..60 аралығындағы бүтін сан болуы тиіс');
+    throw new Error('Grid size must be an integer between 2 and 60');
   return Array.from({ length: rows }, () => Array(cols).fill(fill));
 }

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#04130e">
+<title>ThreeOhNine — AI алгоритм визуализаторы</title>
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- SVG иконкалары (sprite) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H16a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h7.5"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></symbol>
+    <symbol id="i-swords" viewBox="0 0 24 24"><path d="M3 3l8 8M13 13l8 8M21 3l-8 8M11 13l-8 8"/><circle cx="12" cy="12" r="1.5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+    <symbol id="i-bars" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24"><path d="M4 20L16 8M15 3v3M19 7h3M18 2.5l.5 1.5M5 5l1.5 1.5M20 12l-1.5 1.5"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M7 21h12M5.5 14.5l8-8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19H8l-2.5-2.5a2 2 0 0 1 0-2z"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  </defs>
+</svg>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<header class="glass">
+  <div class="brand">
+    <span class="logo"><img src="img/logo.svg" alt="ThreeOhNine"></span>
+    <div><h1>ThreeOhNine</h1><p>AI алгоритм визуализаторы · QAIRU Final Project 2026</p></div>
+  </div>
+  <nav class="seg-nav" role="tablist" aria-label="Тақырыптар">
+    <button role="tab" data-tab="search" class="active"><svg class="ic"><use href="#i-route"/></svg><span>Апта 2 · A*</span></button>
+    <button role="tab" data-tab="queens"><svg class="ic"><use href="#i-crown"/></svg><span>Апта 3 · Hill Climbing</span></button>
+    <button role="tab" data-tab="ttt"><svg class="ic"><use href="#i-swords"/></svg><span>Апта 4 · Minimax</span></button>
+  </nav>
+</header>
+
+<main>
+<!-- ===== Апта 2 ===== -->
+<section id="tab-search" class="panel glass">
+  <div class="controls">
+    <div class="field"><span class="lbl">Алгоритм</span>
+      <div class="seg" data-for="s-algo">
+        <button data-v="astar" class="on">A*</button><button data-v="ucs">UCS</button><button data-v="bfs">BFS</button><button data-v="dfs">DFS</button>
+      </div><input type="hidden" id="s-algo" value="astar"></div>
+    <label class="field"><span class="lbl">Эвристика</span>
+      <select id="s-heur"><option value="manhattan">Manhattan</option><option value="euclidean">Euclidean</option><option value="zero">h = 0</option></select></label>
+    <div class="field"><span class="lbl">Сурет салу</span>
+      <div class="seg" data-for="s-mode">
+        <button data-v="wall" class="on">Қабырға</button><button data-v="w5">Салмақ 5</button><button data-v="w9">Салмақ 9</button>
+        <button data-v="start">Бастау</button><button data-v="goal">Аяқтау</button><button data-v="erase">Өшіргіш</button>
+      </div><input type="hidden" id="s-mode" value="wall"></div>
+  </div>
+  <div class="controls">
+    <label class="field slider"><span class="lbl">Жол саны <output>15</output></span><input id="s-rows" type="range" min="5" max="30" value="15"></label>
+    <label class="field slider"><span class="lbl">Баған саны <output>25</output></span><input id="s-cols" type="range" min="5" max="40" value="25"></label>
+    <label class="field slider"><span class="lbl">Жылдамдық <output>60</output></span><input id="s-speed" type="range" min="1" max="100" value="60"></label>
+  </div>
+  <div class="controls actions">
+    <button id="s-run" class="btn primary"><svg class="ic"><use href="#i-play"/></svg>Іске қосу</button>
+    <button id="s-compare" class="btn"><svg class="ic"><use href="#i-bars"/></svg>Барлығын салыстыру</button>
+    <button id="s-random" class="btn"><svg class="ic"><use href="#i-wand"/></svg>Кездейсоқ қабырғалар</button>
+    <button id="s-resize" class="btn"><svg class="ic"><use href="#i-grid"/></svg>Торды жасау</button>
+    <button id="s-clear" class="btn"><svg class="ic"><use href="#i-eraser"/></svg>Тазалау</button>
+  </div>
+  <div id="s-msg" class="msg" role="status"></div>
+  <div class="canvas-wrap"><canvas id="s-canvas"></canvas></div>
+  <p class="legend"><i class="c-start"></i>бастау <i class="c-goal"></i>аяқтау <i class="c-wall"></i>қабырға <i class="c-vis"></i>ашылған <i class="c-path"></i>жол · торды саусақпен немесе тышқанмен бояңыз</p>
+  <div id="s-result"></div>
+  <div class="explain" id="s-explain"></div>
+</section>
+
+<!-- ===== Апта 3 ===== -->
+<section id="tab-queens" class="panel glass" hidden>
+  <div class="controls">
+    <label class="field slider"><span class="lbl">N (ферзьдер) <output>8</output></span><input id="q-n" type="range" min="4" max="20" value="8"></label>
+    <label class="field slider"><span class="lbl">Restarts <output>20</output></span><input id="q-restarts" type="range" min="0" max="100" value="20"></label>
+    <label class="field"><span class="lbl">Seed</span><input id="q-seed" type="number" value="1" min="0"></label>
+  </div>
+  <div class="controls actions">
+    <button id="q-run" class="btn primary"><svg class="ic"><use href="#i-refresh"/></svg>Іске қосу</button>
+    <button id="q-play" class="btn"><svg class="ic"><use href="#i-play"/></svg>Ойнату</button>
+  </div>
+  <div id="q-msg" class="msg" role="status"></div>
+  <label class="field slider wide"><span class="lbl">Қадам</span><input id="q-slider" type="range" min="0" max="0" value="0" aria-label="Қадам"></label>
+  <div class="canvas-wrap"><canvas id="q-canvas"></canvas></div>
+  <div id="q-info" class="explain"></div>
+</section>
+
+<!-- ===== Апта 4 ===== -->
+<section id="tab-ttt" class="panel glass" hidden>
+  <div class="controls">
+    <div class="field"><span class="lbl">AI алгоритмі</span>
+      <div class="seg" data-for="t-algo"><button data-v="alphabeta" class="on">Alpha-Beta</button><button data-v="minimax">Minimax</button></div>
+      <input type="hidden" id="t-algo" value="alphabeta"></div>
+    <div class="field"><span class="lbl">Кім бірінші</span>
+      <div class="seg" data-for="t-first"><button data-v="human" class="on">Адам (X)</button><button data-v="ai">AI (O)</button></div>
+      <input type="hidden" id="t-first" value="human"></div>
+    <button id="t-new" class="btn primary"><svg class="ic"><use href="#i-plus"/></svg>Жаңа ойын</button>
+  </div>
+  <div id="t-msg" class="msg" role="status"></div>
+  <div id="t-board" class="ttt" role="grid"></div>
+  <div id="t-info" class="explain"></div>
+</section>
+</main>
+
+<footer>Барлық алгоритмдер қолмен жазылған (дайын AI API жоқ). Код: <code>src/</code><br>Әзірлеушілер: <b>Krasnobrizh Artyom</b> және <b>Orazgali Daulet</b></footer>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

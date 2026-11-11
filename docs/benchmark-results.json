@@ -1,0 +1,163 @@
+{
+  "search": {
+    "Ашық тор 30x30": {
+      "bfs": {
+        "found": true,
+        "cost": 58,
+        "expanded": 900,
+        "ms": 0.81
+      },
+      "dfs": {
+        "found": true,
+        "cost": 58,
+        "expanded": 59,
+        "ms": 0.074
+      },
+      "ucs": {
+        "found": true,
+        "cost": 58,
+        "expanded": 900,
+        "ms": 0.801
+      },
+      "astar": {
+        "found": true,
+        "cost": 58,
+        "expanded": 116,
+        "ms": 0.141
+      }
+    },
+    "Лабиринт 15x25 (екі қабырға)": {
+      "bfs": {
+        "found": true,
+        "cost": 34,
+        "expanded": 294,
+        "ms": 0.18
+      },
+      "dfs": {
+        "found": true,
+        "cost": 114,
+        "expanded": 259,
+        "ms": 0.213
+      },
+      "ucs": {
+        "found": true,
+        "cost": 34,
+        "expanded": 295,
+        "ms": 0.151
+      },
+      "astar": {
+        "found": true,
+        "cost": 34,
+        "expanded": 226,
+        "ms": 0.123
+      }
+    },
+    "Кездейсоқ 25% қабырға 30x30 (seed 2)": {
+      "bfs": {
+        "found": true,
+        "cost": 58,
+        "expanded": 661,
+        "ms": 0.265
+      },
+      "dfs": {
+        "found": true,
+        "cost": 154,
+        "expanded": 231,
+        "ms": 0.104
+      },
+      "ucs": {
+        "found": true,
+        "cost": 58,
+        "expanded": 661,
+        "ms": 0.334
+      },
+      "astar": {
+        "found": true,
+        "cost": 58,
+        "expanded": 331,
+        "ms": 0.176
+      }
+    },
+    "Салмақты 20x20 (құны 1..9, seed 5)": {
+      "bfs": {
+        "found": true,
+        "cost": 196,
+        "expanded": 400,
+        "ms": 0.167
+      },
+      "dfs": {
+        "found": true,
+        "cost": 196,
+        "expanded": 39,
+        "ms": 0.02
+      },
+      "ucs": {
+        "found": true,
+        "cost": 119,
+        "expanded": 400,
+        "ms": 0.196
+      },
+      "astar": {
+        "found": true,
+        "cost": 119,
+        "expanded": 400,
+        "ms": 0.201
+      }
+    }
+  },
+  "queens": [
+    {
+      "n": 8,
+      "runs": 50,
+      "solved": 50,
+      "avgRestarts": 4.94,
+      "avgSteps": 24.1,
+      "plainSuccessPct": 16.5
+    },
+    {
+      "n": 12,
+      "runs": 50,
+      "solved": 49,
+      "avgRestarts": 19.24,
+      "avgSteps": 118.4,
+      "plainSuccessPct": 4.5
+    },
+    {
+      "n": 20,
+      "runs": 50,
+      "solved": 45,
+      "avgRestarts": 22.62,
+      "avgSteps": 223.4,
+      "plainSuccessPct": 2
+    }
+  ],
+  "ttt": [
+    {
+      "name": "Бос тақта",
+      "minimaxNodes": 549946,
+      "alphaBetaNodes": 20866,
+      "savedPct": 96.2,
+      "minimaxMs": 126.63,
+      "alphaBetaMs": 5.79,
+      "sameValue": true
+    },
+    {
+      "name": "X ортада",
+      "minimaxNodes": 55505,
+      "alphaBetaNodes": 2459,
+      "savedPct": 95.6,
+      "minimaxMs": 13.23,
+      "alphaBetaMs": 0.76,
+      "sameValue": true
+    },
+    {
+      "name": "X бұрышта",
+      "minimaxNodes": 59705,
+      "alphaBetaNodes": 2788,
+      "savedPct": 95.3,
+      "minimaxMs": 14.28,
+      "alphaBetaMs": 0.68,
+      "sameValue": true
+    }
+  ]
+}

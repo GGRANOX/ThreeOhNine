@@ -1,0 +1,11 @@
+{
+  "name": "threeohnine",
+  "version": "1.0.0",
+  "description": "AI Algorithm Visualizer — QAIRU Final Project 2026",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "bench": "node scripts/benchmark.mjs",
+    "start": "npx serve ."
+  }
+}

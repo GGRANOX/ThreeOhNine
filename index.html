@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#04130e">
-<title>ThreeOhNine — AI Algorithm Visualizer</title>
+<title>ThreeOhNine — Emergency Exit Planner</title>
+<meta name="description" content="A* + Bayes + MDP guide a person to the safest exit during a fire alarm.">
 <link rel="icon" type="image/svg+xml" href="img/logo.svg">
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -25,6 +26,8 @@
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l4-4-4-4M14 12H4"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M7.5 15h9"/></symbol>
   </defs>
 </svg>
 <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
@@ -32,17 +35,73 @@
 <header class="glass">
   <div class="brand">
     <span class="logo"><img src="img/logo.svg" alt="ThreeOhNine"></span>
-    <div><h1>ThreeOhNine</h1><p>AI Algorithm Visualizer · QAIRU Final Project 2026</p></div>
+    <div><h1>ThreeOhNine</h1><p>Emergency Exit Planner · A* + Bayes + MDP · QAIRU Final Project 2026</p></div>
   </div>
   <nav class="seg-nav" role="tablist" aria-label="Topics">
-    <button role="tab" data-tab="search" class="active"><svg class="ic"><use href="#i-route"/></svg><span>Week 2 · A*</span></button>
-    <button role="tab" data-tab="queens"><svg class="ic"><use href="#i-crown"/></svg><span>Week 3 · Hill Climbing</span></button>
-    <button role="tab" data-tab="ttt"><svg class="ic"><use href="#i-swords"/></svg><span>Week 4 · Minimax</span></button>
+    <button role="tab" data-tab="planner" class="active"><svg class="ic"><use href="#i-exit"/></svg><span>Exit Planner</span></button>
+    <button role="tab" data-tab="lab"><svg class="ic"><use href="#i-flask"/></svg><span>Algorithm Lab</span></button>
   </nav>
 </header>
 
 <main>
-<!-- ===== Week 2 ===== -->
+<!-- ===== Exit Planner: A* -> Bayes -> MDP ===== -->
+<section id="tab-planner" class="panel glass planner" aria-labelledby="pl-title">
+  <div class="pl-head">
+    <h2 id="pl-title">Mini Emergency Exit Planner</h2>
+    <p>A fire alarm sounds. The planner must get the person to an exit fast <b>without walking into smoke</b>. The fastest route runs through a corridor with a noisy smoke sensor. Three AI methods solve this together:</p>
+    <ol class="pipeline">
+      <li data-step="1"><b>A*</b><span>fastest route + detour</span></li>
+      <li data-step="2"><b>Bayes</b><span>P(corridor blocked)</span></li>
+      <li data-step="3"><b>MDP</b><span>Proceed or Detour?</span></li>
+      <li data-step="4"><b>Plan</b><span>safe route out</span></li>
+    </ol>
+  </div>
+  <div class="pl-grid">
+    <div class="pl-map">
+      <div class="canvas-wrap"><canvas id="p-canvas" aria-label="Building map with the person, two exits and the sensor corridor"></canvas></div>
+      <p class="legend"><i class="c-person"></i>person <i class="c-exit"></i>exit <i class="c-sensor"></i>sensor corridor <i class="c-wall"></i>wall <i class="c-path"></i>chosen route</p>
+      <div class="field map-edit"><span class="lbl">Edit the map (click a cell)</span>
+        <div class="seg" data-for="p-mode"><button data-v="wall" class="on">Wall</button><button data-v="start">Person</button><button data-v="sensor">Sensor</button></div>
+        <input type="hidden" id="p-mode" value="wall"></div>
+    </div>
+    <div class="pl-side">
+      <div class="field"><span class="lbl">Smoke sensor reading</span>
+        <div class="seg" data-for="p-reading"><button data-v="alarm" class="on">Alarm</button><button data-v="clear">No alarm</button></div>
+        <input type="hidden" id="p-reading" value="alarm"></div>
+      <label class="field slider"><span class="lbl">Prior P(blocked) <output>0.20</output></span><input id="p-prior" type="range" min="0" max="1" step="0.01" value="0.2"></label>
+      <label class="field slider"><span class="lbl">P(alarm | blocked) <output>0.90</output></span><input id="p-tp" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+      <label class="field slider"><span class="lbl">P(alarm | clear) <output>0.15</output></span><input id="p-fp" type="range" min="0" max="1" step="0.01" value="0.15"></label>
+      <label class="field slider"><span class="lbl">Smoke penalty, steps <output>20</output></span><input id="p-pen" type="range" min="0" max="60" step="1" value="20"></label>
+      <label class="field slider"><span class="lbl"><span>Discount <span class="lc">γ</span></span> <output>0.90</output></span><input id="p-gamma" type="range" min="0" max="0.99" step="0.01" value="0.9"></label>
+      <div class="actions pl-actions">
+        <button id="p-run" class="btn primary"><svg class="ic"><use href="#i-play"/></svg>Run step by step</button>
+        <button id="p-reset" class="btn"><svg class="ic"><use href="#i-refresh"/></svg>Reset</button>
+      </div>
+      <div id="p-decision" class="decision" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="steps">
+    <article class="step" id="p-step1"><div class="step-head"><span class="num">1</span><div><h3>A* search</h3><span class="tag">Search</span></div></div><dl id="p-step1-body"></dl></article>
+    <article class="step" id="p-step2"><div class="step-head"><span class="num">2</span><div><h3>Bayesian inference</h3><span class="tag">Probabilistic reasoning</span></div></div><dl id="p-step2-body"></dl></article>
+    <article class="step" id="p-step3"><div class="step-head"><span class="num">3</span><div><h3>MDP decision</h3><span class="tag">Sequential decision making</span></div></div><dl id="p-step3-body"></dl></article>
+  </div>
+  <details class="assumptions"><summary>Model assumptions (toy values, no real data)</summary>
+    <ul>
+      <li>Map: 6×6 grid, 2 exits, 3 walls, 1 smoke sensor in the corridor doorway. Every move costs 1 step.</li>
+      <li>Sensor: P(alarm | blocked) = 0.90, P(alarm | clear) = 0.15; prior P(blocked) = 0.20.</li>
+      <li>Rewards: Proceed + Clear = −(fastest route); Proceed + Blocked = −(walk to the corridor and back + detour) − smoke penalty; Detour = −(detour route).</li>
+      <li>Transitions T(s′ | s, a): Proceed keeps a blocked corridor blocked (1.0) and a clear one clear with 0.90; Detour leads to a clear route with 0.95.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ===== Algorithm Lab: the course demos ===== -->
+<div id="tab-lab" hidden>
+  <nav class="seg lab-nav" data-for="lab-tab" aria-label="Algorithm Lab">
+    <button data-v="search" class="on"><svg class="ic"><use href="#i-route"/></svg>A* search</button><button data-v="queens"><svg class="ic"><use href="#i-crown"/></svg>Hill Climbing</button><button data-v="ttt"><svg class="ic"><use href="#i-swords"/></svg>Minimax</button>
+  </nav>
+  <input type="hidden" id="lab-tab" value="search">
+<!-- ===== Lab: search ===== -->
 <section id="tab-search" class="panel glass">
   <div class="controls">
     <div class="field"><span class="lbl">Algorithm</span>
@@ -76,7 +135,7 @@
   <div class="explain" id="s-explain"></div>
 </section>
 
-<!-- ===== Week 3 ===== -->
+<!-- ===== Lab: local search ===== -->
 <section id="tab-queens" class="panel glass" hidden>
   <div class="controls">
     <label class="field slider"><span class="lbl">N (queens) <output>8</output></span><input id="q-n" type="range" min="4" max="20" value="8"></label>
@@ -93,7 +152,7 @@
   <div id="q-info" class="explain"></div>
 </section>
 
-<!-- ===== Week 4 ===== -->
+<!-- ===== Lab: adversarial search ===== -->
 <section id="tab-ttt" class="panel glass" hidden>
   <div class="controls">
     <div class="field"><span class="lbl">AI algorithm</span>
@@ -108,9 +167,10 @@
   <div id="t-board" class="ttt" role="grid"></div>
   <div id="t-info" class="explain"></div>
 </section>
+</div>
 </main>
 
-<footer>All algorithms are written by hand (no ready-made AI APIs). Code: <code>src/</code><br>Developers: <b>Krasnobrizh Artyom</b> and <b>Orazgali Daulet</b></footer>
+<footer>All algorithms are written by hand (no ready-made AI APIs). Python core: <code>planner/</code> · web: <code>src/</code><br>Developers: <b>Krasnobrizh Artyom</b> and <b>Orazgali Daulet</b></footer>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

@@ -1,23 +1,34 @@
 import { solve, makeGrid } from './search.js';
 import { hillClimbing } from './localsearch.js';
 import { aiMove, minimax, alphaBeta, winner, isFull } from './adversarial.js';
+import './planner-ui.js';
 
 const $ = (id) => document.getElementById(id);
 const say = (el, text, kind = '') => { el.textContent = text; el.className = 'msg ' + kind; };
 const NAMES = { astar: 'A*', ucs: 'UCS', bfs: 'BFS', dfs: 'DFS' };
 
-// ---------- Tabs (deep links: #search, #queens, #ttt) ----------
-function showTab(name) {
-  const tabs = document.querySelectorAll('nav button');
-  if (![...tabs].some((b) => b.dataset.tab === name)) name = 'search';
-  tabs.forEach((x) => x.classList.toggle('active', x.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach((p) => { p.hidden = p.id !== 'tab-' + name; });
+// ---------- Tabs: #planner (default), #lab; lab deep links #search, #queens, #ttt ----------
+const LAB = ['search', 'queens', 'ttt'];
+function showLab(name) {
+  if (!LAB.includes(name)) name = 'search';
+  $('lab-tab').value = name;
+  document.querySelectorAll('.lab-nav button').forEach((b) => b.classList.toggle('on', b.dataset.v === name));
+  LAB.forEach((n) => { $('tab-' + n).hidden = n !== name; });
 }
-document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+function showTab(hash) {
+  const top = hash === 'lab' || LAB.includes(hash) ? 'lab' : 'planner';
+  document.querySelectorAll('header nav button').forEach((x) => x.classList.toggle('active', x.dataset.tab === top));
+  $('tab-planner').hidden = top !== 'planner';
+  $('tab-lab').hidden = top !== 'lab';
+  if (top === 'lab') showLab(LAB.includes(hash) ? hash : $('lab-tab').value);
+}
+document.querySelectorAll('header nav button').forEach((b) => b.addEventListener('click', () => {
   showTab(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab);
 }));
 
-// ======================= Week 2: Search =======================
+$('lab-tab').addEventListener('change', () => { showLab($('lab-tab').value); history.replaceState(null, '', '#' + $('lab-tab').value); });
+
+// ======================= Lab: A* search =======================
 const S = { cells: makeGrid(15, 25), start: [7, 3], goal: [7, 21], vis: new Map(), path: [], timer: 0, painting: false };
 const sc = $('s-canvas'), sctx = sc.getContext('2d');
 const CELL = 26;
@@ -27,11 +38,13 @@ document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click',
   const b = e.target.closest('button'); if (!b) return;
   seg.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
   $(seg.dataset.for).value = b.dataset.v;
+  $(seg.dataset.for).dispatchEvent(new Event('change'));
 }));
 function syncSlider(inp) {
   const p = ((inp.value - inp.min) / (inp.max - inp.min)) * 100;
   inp.style.setProperty('--p', p + '%');
-  const out = inp.closest('label')?.querySelector('output'); if (out) out.textContent = inp.value;
+  const dec = (inp.step.split('.')[1] || '').length;
+  const out = inp.closest('label')?.querySelector('output'); if (out) out.textContent = (+inp.value).toFixed(dec);
 }
 document.querySelectorAll('input[type=range]').forEach((r) => { syncSlider(r); r.addEventListener('input', () => syncSlider(r)); });
 
@@ -141,7 +154,7 @@ $('s-random').onclick = () => {
 };
 sDraw();
 
-// ======================= Week 3: Hill Climbing =======================
+// ======================= Lab: Hill Climbing =======================
 const Q = { res: null, i: 0, timer: 0 };
 const qc = $('q-canvas'), qctx = qc.getContext('2d');
 
@@ -186,7 +199,7 @@ $('q-play').onclick = () => {
 };
 qDraw();
 
-// ======================= Week 4: Minimax =======================
+// ======================= Lab: Minimax =======================
 const T = { b: Array(9).fill(null), over: false };
 function tRender() {
   const box = $('t-board'); box.innerHTML = '';
@@ -230,6 +243,7 @@ $('t-new').click();
 
 $('q-run').click(); // initial demo: 8 queens
 showTab(location.hash.slice(1));
+addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
 // ?demo — preset state for screenshots / the defense (maze + comparison, first TTT move)
 if (new URLSearchParams(location.search).has('demo')) {

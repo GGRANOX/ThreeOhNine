@@ -1,7 +1,16 @@
 name: Tests
 on: [push, pull_request]
 jobs:
-  test:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -p "test_*.py" -v
+      - run: python main.py both
+  web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

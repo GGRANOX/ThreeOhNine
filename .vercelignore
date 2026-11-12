@@ -1,0 +1,7 @@
+# The website is static; the Python core, notebook and tests are not needed on Vercel.
+main.py
+planner/
+ThreeOhNine.ipynb
+tests/
+scripts/
+__pycache__/

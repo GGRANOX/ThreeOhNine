@@ -1,10 +1,13 @@
 {
   "name": "threeohnine",
-  "version": "1.0.0",
-  "description": "AI Algorithm Visualizer — QAIRU Final Project 2026",
+  "version": "2.0.0",
+  "description": "Mini Emergency Exit Planner (A* + Bayes + MDP) — QAIRU Final Project 2026",
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "test:py": "python3 -m unittest discover -s tests -p \"test_*.py\" -v",
+    "demo": "python3 main.py",
+    "evaluate": "python3 scripts/evaluate.py",
     "bench": "node scripts/benchmark.mjs",
     "start": "npx serve ."
   }

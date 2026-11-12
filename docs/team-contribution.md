@@ -1,12 +1,12 @@
 # Team Contribution Statement
 
-**Project:** ThreeOhNine — AI Algorithm Visualizer
+**Project:** ThreeOhNine — Mini Emergency Exit Planner
 
 | Member | Contribution |
 |---|---|
-| Krasnobrizh Artyom | Programming: algorithm code (BFS, DFS, UCS, A*, Hill Climbing, Minimax, Alpha-Beta), interface, tests, publishing to GitHub |
-| Orazgali Daulet | Research and preparing materials (algorithm theory, sources), creating the presentation |
+| Krasnobrizh Artyom | Programming: A\* search, the MDP decision and the pipeline in Python, the web demo and the Algorithm Lab, tests, publishing to GitHub and Vercel |
+| Orazgali Daulet | Problem and scenario design, the sensor and MDP assumptions (probabilities, rewards, transitions), the Bayes calculations and their hand check, the presentation |
 
-Both members can explain how the algorithms work and take part in the project defense.
+Both members can explain the whole pipeline (A\* → Bayes → MDP), answer questions about each algorithm and take part in the defense.
 
 No secret API keys have been published in the repository.

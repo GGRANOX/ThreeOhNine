@@ -1,146 +1,130 @@
-# Technical Report — ThreeOhNine
+# Technical Report — ThreeOhNine: Mini Emergency Exit Planner
 
-**Project:** ThreeOhNine — AI Algorithm Visualizer (QAIRU AI Application Development Challenge 2026, idea #5)
+**Course:** AI Fundamentals — Final Project 2026 (topic 05, Mini Emergency Exit Planner)
 **Authors:** Krasnobrizh Artyom, Orazgali Daulet
 **Live demo:** https://threeohnine.vercel.app · **GitHub:** https://github.com/GGRANOX/ThreeOhNine
 
-## 1. Goal and problem
-AI algorithms are hard to understand from a textbook: you can see the result, but not *how* the algorithm gets there. ThreeOhNine is an interactive web application that shows algorithms step by step and lets you change their parameters and compare their results. All algorithms are written by hand; no ready-made AI APIs are used.
+## 1. Problem
+When a fire alarm sounds, people head for the nearest exit. The nearest exit is not always the safest: a corridor on the way may already be full of smoke. A smoke sensor can warn about it, but sensors give false alarms and sometimes miss smoke. The planner has to answer one practical question: **which way should this person go right now?** It has to balance speed (fewer steps) against safety (not walking into smoke).
 
-The application covers topics from **three different weeks**:
+## 2. Solution: one pipeline, three algorithms
+The three algorithms come from the three groups required by the brief. Each one solves the part of the problem it is best at and hands its result to the next.
 
-| Week | Topic | Algorithms | File |
+| Step | Algorithm (group) | Subproblem | Why this algorithm fits |
 |---|---|---|---|
-| 2 | Uninformed Search, A*, Heuristics | BFS, DFS, UCS, A* | `src/search.js` |
-| 3 | Local Search | Hill Climbing + random restarts (N-Queens) | `src/localsearch.js` |
-| 4 | Adversarial Search | Minimax, Alpha-Beta (Tic-Tac-Toe) | `src/adversarial.js` |
+| 1 | A\* (search) | Where are the exits and how far are they? | Finds the shortest route on a map, provably optimal with an admissible heuristic, and expands few cells |
+| 2 | Bayes’ rule (probabilistic reasoning) | How likely is the corridor to be blocked after this sensor reading? | Combines a prior with a noisy observation into a calibrated probability |
+| 3 | MDP (sequential decision making) | Should the person proceed or detour? | Chooses the action with the best expected outcome under uncertainty, using rewards and state probabilities |
 
-## 2. Architecture
-Plain JavaScript (ES modules), no backend, no build step. The algorithm logic (`src/*.js`) is separated from the UI and written as pure functions, so it is tested in Node.js without a browser. `src/main.js` is the interface: canvas, tabs, animation. Hosting: Vercel (static site); source code: GitHub.
+Data flow: A\* → route lengths → **MDP rewards**; Bayes → P(blocked) → **MDP belief**; MDP → action → the A\* route that is followed. None of the three alone solves the problem: A\* alone always walks into the corridor, Bayes alone gives a number but no route, and the MDP needs both.
+
+## 3. Inputs and assumptions
+Toy values, as allowed by the brief (no real dataset or trained model). All of them live in `planner/scenario.py`.
 
 ```
-index.html, css/, fonts/, img/          # interface, design, fonts, logo
-src/search.js | localsearch.js | adversarial.js   # algorithms
-src/main.js                            # UI, animation, explanation panels
-tests/algorithms.test.js               # 11 automated tests (node:test)
-scripts/benchmark.mjs                  # measurement script -> docs/benchmark-results.json
+. . . . . A      S = start (3,0)       A = Exit A (0,5)    B = Exit B (3,5)
+. . # . # .      C = corridor doorway with the smoke sensor (3,2)
+. . # . # .      # = wall (3 wall segments)
+S . C . . B
+. . # . . .
+. . # . . .
 ```
+- Every move costs 1 step; moves are up, down, left, right.
+- Sensor: prior P(blocked) = 0.20; P(alarm | blocked) = 0.90 (sensitivity); P(alarm | clear) = 0.15 (false-alarm rate).
+- MDP: states {Clear, Blocked}; actions {Proceed, Detour}; discount γ = 0.9; smoke penalty = 20 steps.
+- Transitions T(s′ | s, a): Proceed — Clear→Clear 0.90, Clear→Blocked 0.10, Blocked→Blocked 1.00; Detour — moves the person to a route that is clear with probability 0.95 from either state.
 
-Interface: dark emerald glassmorphism design with glowing neon edges, a custom “309” logo, Inter and JetBrains Mono fonts (stored in the repository), iOS-style sliders, SVG icons, `prefers-reduced-motion` support and a responsive layout for mobile screens.
+## 4. Algorithms: input → key steps → output
+### 4.1 A\* search (`planner/astar.py`)
+- **Input:** grid, start, the two exits, optional cells to treat as walls.
+- **Key steps:** keep a priority queue ordered by f = g + h, where g is the number of steps so far and h is the Manhattan distance to the **nearest** exit. Pop the lowest f, stop at an exit, otherwise expand the 4 neighbours. Ties are broken by lower h, then by insertion order, so results are reproducible. The heuristic is admissible: every step costs at least 1 and moves are 4-directional, so Manhattan distance never overestimates.
+- **Output:** fastest route **Exit B, 5 steps**, through C (6 cells expanded). A\* is then run again with C treated as a wall, which gives the detour **Exit A, 8 steps** (12 cells expanded).
+- **Contribution:** the two route lengths and the distance to the corridor (2 steps) become the MDP rewards.
 
-## 3. Algorithms
-### 3.1 Week 2 — Search: BFS, DFS, UCS, A*
-- **Purpose:** find a path on a grid from the start point to the goal.
-- **Input:** grid (0 = wall, ≥1 = cost of entering the cell), start, goal, algorithm, heuristic (Manhattan, Euclidean, h=0).
-- **Output:** path, path cost, expansion order (for the animation), number of expanded nodes, run time.
-- **Steps:** take a node from the frontier → goal test → expand the neighbours (4 directions) → update g and the parent. BFS uses a FIFO queue, DFS a stack, UCS a min-heap on g, A* a min-heap on f = g + h.
-- **Limitations:** BFS ignores cell costs (it minimizes the number of steps); DFS does not guarantee an optimal path; the optimality of A* depends on an admissible heuristic — Manhattan and Euclidean are admissible on a 4-connected grid.
+### 4.2 Bayesian inference (`planner/bayes.py`)
+- **Input:** prior P(B) = 0.20, sensor model, one reading o ∈ {alarm, no alarm}.
+- **Key steps:** P(B | o) = P(o | B)·P(B) / [P(o | B)·P(B) + P(o | ¬B)·P(¬B)].
+  - Alarm: 0.90·0.20 = 0.18; 0.15·0.80 = 0.12; P(o) = 0.30 → **P(B | alarm) = 0.60**.
+  - No alarm: 0.10·0.20 = 0.02; 0.85·0.80 = 0.68; P(o) = 0.70 → **P(B | no alarm) = 0.0286**.
+- **Output:** the posterior probability that the corridor is blocked.
+- **Contribution:** it is the MDP’s belief over its two states.
 
-### 3.2 Week 3 — Local Search: Hill Climbing (N-Queens)
-- **Input:** N, maximum number of restarts, seed. **Output:** the state at every step, h (number of conflicting pairs), solved / not solved.
-- **Steps:** random state → move to the best (steepest-ascent) neighbour, i.e. move the queen that reduces h the most → stop if h does not decrease (local minimum) → random restart.
-- **Limitations:** gets stuck in local minima and on plateaus; without enough restarts a solution is not guaranteed.
+### 4.3 MDP decision (`planner/mdp.py`)
+- **Input:** rewards from A\* (negative steps):
 
-### 3.3 Week 4 — Adversarial Search: Minimax and Alpha-Beta (Tic-Tac-Toe)
-- **Input:** board state, AI algorithm. **Output:** chosen move, its value, number of nodes searched.
-- **Steps:** recursive search of the full game tree; terminal value for the AI is 10−depth (win), depth−10 (loss), 0 (draw); the AI maximizes, the human minimizes. Alpha-Beta prunes a branch when `beta ≤ alpha`.
-- **Limitations:** a full-depth search is only feasible for 3×3; larger games need a depth limit and a heuristic evaluation.
-
-## 4. Testing
-`npm test` (Node.js `node:test`, 11 tests, all passing):
-
-| # | Test | What it checks |
+| R(s, a) | Proceed | Detour |
 |---|---|---|
-| 1 | BFS/UCS/A* on a uniform-cost grid | all three find the same optimal path cost (15) |
-| 2 | UCS/A* on a weighted grid | they go around the expensive cell (cost 4) |
-| 3 | A* ≤ UCS | A* expands no more nodes than UCS, with the same cost |
-| 4 | No path | all 4 algorithms return `found=false` |
-| 5 | Invalid input | start on a wall, point outside the grid, size, unknown algorithm |
-| 6 | Hill Climbing | the found state has 0 conflicts, one queen per row |
-| 7 | Hill Climbing invalid parameters | N < 4, fractional N, negative restarts |
-| 8 | Alpha-Beta = Minimax | same value, fewer nodes |
-| 9 | AI never loses | checks every possible reply of X |
-| 10 | Winning move | the AI picks a one-move win |
-| 11 | Invalid board | an error is thrown |
+| Clear | −5 (fastest route) | −8 (detour) |
+| Blocked | −(2·2 + 8) − 20 = −32 (walk to the smoke, back, detour, penalty) | −8 |
 
-## 5. Results (real measurements)
-Measured with `npm run bench` (`scripts/benchmark.mjs`), Node.js 24, Windows 11. Search time is the average of 100 runs, Minimax/Alpha-Beta the average of 20 runs. Full data: `docs/benchmark-results.json`. Times depend on the machine; node counts and costs are deterministic.
+- **Key steps:** one Bellman update, as the brief suggests: V₀(s) = maxₐ R(s, a); Q(s, a) = R(s, a) + γ Σ T(s′ | s, a) V₀(s′). Then the belief from Bayes is applied: Q(b, a) = (1 − b)·Q(Clear, a) + b·Q(Blocked, a).
 
-### 5.1 Search algorithms
+| Q(s, a) | Proceed | Detour |
+|---|---|---|
+| Clear | −9.770 | −12.635 |
+| Blocked | −39.200 | −12.635 |
+| b = 0.60 (alarm) | **−27.428** | **−12.635** → Detour |
+| b = 0.0286 (no alarm) | **−10.611** | **−12.635** → Proceed |
 
-**Open grid 30x30**
+- **Output:** the action with the higher value. The two lines cross at **P(blocked) = 0.0973**, the decision threshold: detour whenever the corridor is more than about 10% likely to be blocked.
+- **Contribution:** it turns a route and a probability into one recommendation, with an explicit trade-off between 3 extra steps and the risk of smoke.
 
-| Algorithm | Found | Path cost | Nodes expanded | Time, ms |
+### 4.4 Final plan (`planner/pipeline.py`)
+- Alarm: **Detour → Exit A in 8 steps**: (3,0) → (3,1) → (2,1) → (1,1) → (0,1) → (0,2) → (0,3) → (0,4) → (0,5).
+- No alarm: **Proceed → Exit B in 5 steps**: (3,0) → (3,1) → (3,2) → (3,3) → (3,4) → (3,5).
+- Edge cases: if the sensor is not on the fastest route, the planner proceeds; if no detour exists, it proceeds; if no exit is reachable, it reports an error.
+
+## 5. Implementation
+- **Python core** (`planner/`, standard library only), with `main.py` as a console demo and `ThreeOhNine.ipynb` as a notebook. Each algorithm prints input → key steps → output → one-sentence explanation.
+- **Web demo** (optional): the same logic ported to JavaScript (`src/planner.js`), with an interactive map, sliders for every assumption and a step-by-step animation of the pipeline (`src/planner-ui.js`). It is deployed on Vercel.
+- **Parity:** `tests/fixtures/parity.json` holds Python results for 60 random maps and parameters. The JavaScript test checks that the website gives exactly the same paths, probabilities, Q-values and decisions.
+
+## 6. Testing
+`python -m unittest discover -s tests -p "test_*.py"` — 18 tests, all passing:
+- **A\*:** fastest route = Exit B in 5 steps; detour = Exit A in 8 steps and avoids C; the path is connected and avoids walls; no route → `None`; start on a wall → error; the heuristic is admissible on every free cell; the cost equals the BFS shortest path on 200 random grids.
+- **Bayes:** alarm → 0.60; no alarm → 0.02/0.70; a useless sensor (equal likelihoods) keeps the prior; invalid probabilities are rejected.
+- **MDP:** rewards come from route lengths; Q-values match the hand calculation; the decision flips exactly at the threshold.
+- **Pipeline:** alarm → Detour via Exit A; no alarm → Proceed via Exit B; sensor off route → Proceed; no detour → Proceed.
+
+`npm test` — 16 JavaScript tests: 5 for the planner (including parity with Python) and 11 for the Algorithm Lab.
+
+## 7. Results and evaluation
+`python scripts/evaluate.py` (full data in `docs/evaluation.json`).
+
+**Policy comparison**, 100,000 simulated fire drills (seed 309). In each drill the corridor is blocked with probability 0.20 and the sensor reacts according to its model:
+
+| Policy | Avg. steps to an exit | Drills where the person walked into smoke |
+|---|---|---|
+| A\* only (always the fastest route) | 6.41 | 20.1% |
+| Always detour | 8.00 | 0.0% |
+| A\* + MDP without the sensor (prior only) | 8.00 | 0.0% |
+| **Full planner: A\* + Bayes + MDP** | **6.04** | **2.0%** |
+
+- The full pipeline is the best trade-off. It is faster on average than always taking the shortest path (6.04 vs 6.41 steps), because turning back from smoke is expensive. It also walks into smoke ten times less often (2.0% vs 20.1%).
+- The sensor is what makes the difference: without it, the MDP has to detour every time (8 steps). The remaining 2% are drills where the corridor was blocked and the sensor missed it (0.20 × 0.10).
+
+**Sensitivity** (threshold 0.0973):
+
+| Prior P(blocked) | After alarm | Decision | After no alarm | Decision |
 |---|---|---|---|---|
-| BFS | yes | 58 | 900 | 0.81 |
-| DFS | yes | 58 | 59 | 0.074 |
-| UCS | yes | 58 | 900 | 0.801 |
-| A* | yes | 58 | 116 | 0.141 |
+| 0.05 | 0.240 | Detour | 0.006 | Proceed |
+| 0.10 | 0.400 | Detour | 0.013 | Proceed |
+| 0.20 | 0.600 | Detour | 0.029 | Proceed |
+| 0.40 | 0.800 | Detour | 0.073 | Proceed |
 
-**Maze 15x25 (two walls)**
+For priors from 0.05 to 0.40 the decision follows the sensor, which is the intended behaviour of a good sensor model.
 
-| Algorithm | Found | Path cost | Nodes expanded | Time, ms |
-|---|---|---|---|---|
-| BFS | yes | 34 | 294 | 0.18 |
-| DFS | yes | 114 | 259 | 0.213 |
-| UCS | yes | 34 | 295 | 0.151 |
-| A* | yes | 34 | 226 | 0.123 |
+**Search effort:** over all 28 free start cells, A\* expands on average 4.5 cells and BFS 13.5 (66% fewer). From the scenario start: A\* expands 6 cells, BFS 22.
 
-**Random 25% walls 30x30 (seed 2)**
+## 8. Limitations and future work
+- One sensor, two corridor states and a single Bellman update keep the model small, as the brief requires. A full value iteration over a multi-step evacuation would be the next step.
+- The person only learns the corridor state from the sensor or by reaching it. Several sensors could be combined with naive Bayes or an HMM over time.
+- Uniform move costs; smoke spreading over time could be added as changing edge costs (re-planning with A\* or D\* Lite).
+- Future development: real floor plans, several people (crowding), and a mobile app that reads building sensors.
 
-| Algorithm | Found | Path cost | Nodes expanded | Time, ms |
-|---|---|---|---|---|
-| BFS | yes | 58 | 661 | 0.265 |
-| DFS | yes | 154 | 231 | 0.104 |
-| UCS | yes | 58 | 661 | 0.334 |
-| A* | yes | 58 | 331 | 0.176 |
+## 9. Appendix: Algorithm Lab
+The website also has an **Algorithm Lab** tab with three course demos that are separate from the main project: A\*/UCS/BFS/DFS comparison on large grids, Hill Climbing with random restarts on N-Queens, and Minimax vs Alpha-Beta in Tic-Tac-Toe (`src/search.js`, `src/localsearch.js`, `src/adversarial.js`; measurements in `docs/benchmark-results.json`, `npm run bench`). For example, on an empty Tic-Tac-Toe board Alpha-Beta searches 20,866 nodes instead of 549,946 with the same result.
 
-**Weighted 20x20 (cost 1..9, seed 5)**
-
-| Algorithm | Found | Path cost | Nodes expanded | Time, ms |
-|---|---|---|---|---|
-| BFS | yes | 196 | 400 | 0.167 |
-| DFS | yes | 196 | 39 | 0.02 |
-| UCS | yes | 119 | 400 | 0.196 |
-| A* | yes | 119 | 400 | 0.201 |
-
-**Conclusions:**
-- On uniform-cost grids BFS, UCS and A* always returned the optimal path cost. DFS found a path of cost 114 in the maze (3.4× the optimal 34) and 154 on the random grid (2.7× the optimal 58).
-- A* expanded 23% fewer nodes than UCS in the maze (226 vs 295), 50% fewer on the random-walls grid (331 vs 661) and 87% fewer on the open grid (116 vs 900).
-- On the weighted grid UCS and A* found cost 119, while BFS/DFS found 196 (65% more expensive) because they ignore cell costs. Here A* expanded 400 nodes, i.e. it had no advantage over UCS: the Manhattan heuristic is weak on a grid with weights 1..9, because it assumes every step has the cheapest cost (1).
-- On the open grid DFS also found a path of cost 58 — not because it is optimal, but because its search order happened to match; in the maze and on the random grid DFS is clearly worse.
-
-### 5.2 Hill Climbing (N-Queens)
-| N | Runs | Solved (≤100 restarts) | Avg. restarts | Avg. steps | Success without restarts (200 runs) |
-|---|---|---|---|---|---|
-| 8 | 50 | 50/50 | 4.94 | 24.1 | 16.5% |
-| 12 | 50 | 49/50 | 19.24 | 118.4 | 4.5% |
-| 20 | 50 | 45/50 | 22.62 | 223.4 | 2% |
-
-**Conclusions:** without restarts Hill Climbing solves the problem less and less often as N grows (N=8: 16.5%; N=20: 2%). With restarts (≤100) a solution was found in 50/50 cases for N=8, 49/50 for N=12 and 45/50 for N=20. The average number of steps grows with N (24 → 223).
-
-### 5.3 Minimax and Alpha-Beta (Tic-Tac-Toe)
-| Initial state | Minimax nodes | Alpha-Beta nodes | Saved | Minimax, ms | Alpha-Beta, ms | Same value |
-|---|---|---|---|---|---|---|
-| Empty board | 549,946 | 20,866 | 96.2% | 126.63 | 5.79 | yes |
-| X in the center | 55,505 | 2,459 | 95.6% | 13.23 | 0.76 | yes |
-| X in a corner | 59,705 | 2,788 | 95.3% | 14.28 | 0.68 | yes |
-
-**Conclusions:** Alpha-Beta returns the same value as Minimax but prunes ~95–96% of the nodes and is roughly 17–22× faster (in this measurement). On an empty board with the AI moving first, Minimax searches 549,946 nodes.
-
-### 5.4 Screenshots
-Files: `docs/screenshots/search.png` (A* and the comparison table), `docs/screenshots/queens.png` (Hill Climbing), `docs/screenshots/ttt.png` (Minimax). To open exactly these states: https://threeohnine.vercel.app/?demo#search (or `#queens`, `#ttt`).
-
-## 6. Limitations and future work
-- The grid is 4-connected (no diagonals); all cell costs are positive.
-- Hill Climbing does not guarantee a solution for large N.
-- Tic-Tac-Toe uses the full game tree with no depth limit.
-- The interface has not been tested extensively by hand on mobile devices (the layout is responsive).
-- Future work: highlighting the current A* pseudocode line, visualizing the Minimax tree, Q-learning (week 5).
-
-## 7. Conclusion
-AI methods from three different weeks (2, 3, 4) were implemented by hand, verified with automated tests and shown interactively. The measurements confirm the expected properties: A* expands fewer nodes than UCS, Alpha-Beta gives the same result as Minimax with far less computation, and random restarts sharply increase the success rate of Hill Climbing.
-
-## 8. References
-- Russell, S., Norvig, P. *Artificial Intelligence: A Modern Approach* (4th ed.), Ch. 3–5.
-- QAIRU AI Fundamentals course materials and the Final Project brief (2026).
+## 10. References
+- Russell, S., Norvig, P. *Artificial Intelligence: A Modern Approach* (4th ed.): Ch. 3 (A\*), Ch. 12–13 (Bayes’ rule), Ch. 17 (MDPs).
+- QAIRU AI Fundamentals course materials, Final Project brief and the Final Project topic list (2026).
